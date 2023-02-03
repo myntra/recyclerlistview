@@ -1,7 +1,7 @@
 import BinarySearch from "../utils/BinarySearch";
 import { Dimension } from "./dependencies/LayoutProvider";
 import { Layout } from "./layoutmanager/LayoutManager";
-import { ImpressionTrackingConfig } from "./RecyclerListView";
+import { ViewabilityConfig } from "./RecyclerListView";
 /***
  * Given an offset this utility can compute visible items. Also tracks previously visible items to compute items which get hidden or visible
  * Virtual renderer uses callbacks from this utility to main recycle pool and the render stack.
@@ -20,7 +20,7 @@ export interface WindowCorrection {
     endCorrection: number;
 }
 
-export type TOnItemStatusChanged = ((all: number[], now: number[], notNow: number[]) => void);
+export type TOnItemStatusChanged = ((all: number[], now: number[], notNow: number[], viewedIndexes?: number[]) => void);
 
 export default class ViewabilityTracker {
     public onVisibleRowsChanged: TOnItemStatusChanged | null;
@@ -39,9 +39,10 @@ export default class ViewabilityTracker {
     private _layouts: Layout[] = [];
     private _actualOffset: number;
     private _defaultCorrection: WindowCorrection;
-    private _impressionTrackingConfig: ImpressionTrackingConfig | undefined;
+    private _viewabilityConfig: ViewabilityConfig | undefined;
+    private _itemsViewTimeRangeMap: Map<number, {startTime: number}>;
 
-    constructor(renderAheadOffset: number, initialOffset: number, impressionTrackingConfig: ImpressionTrackingConfig | undefined) {
+    constructor(renderAheadOffset: number, initialOffset: number, viewabilityConfig: ViewabilityConfig | undefined) {
         this._currentOffset = Math.max(0, initialOffset);
         this._maxOffset = 0;
         this._actualOffset = 0;
@@ -58,9 +59,11 @@ export default class ViewabilityTracker {
         this.onVisibleRowsChanged = null;
         this.onEngagedRowsChanged = null;
 
+        this._itemsViewTimeRangeMap = new Map();
+
         this._relevantDim = { start: 0, end: 0 };
         this._defaultCorrection = { startCorrection: 0, endCorrection: 0, windowShift: 0 };
-        this._impressionTrackingConfig = impressionTrackingConfig;
+        this._viewabilityConfig = viewabilityConfig;
     }
 
     public init(windowCorrection: WindowCorrection): void {
@@ -188,8 +191,8 @@ export default class ViewabilityTracker {
         for (let i = 0; i < count; i++) {
             itemRect = this._layouts[i];
             this._setRelevantBounds(itemRect, relevantDim);
-            const minimumViewabilityPercentage = this._impressionTrackingConfig && this._impressionTrackingConfig.minimumViewabilityPercentage || undefined;
-            if (this._itemIntersectsVisibleWindow(relevantDim.start, relevantDim.end, minimumViewabilityPercentage)) {
+            const minimumItemViewPercentage = this._viewabilityConfig && this._viewabilityConfig.minimumItemViewPercentage || undefined;
+            if (this._itemIntersectsVisibleWindow(relevantDim.start, relevantDim.end, minimumItemViewPercentage)) {
                 return i;
             }
         }
@@ -246,7 +249,7 @@ export default class ViewabilityTracker {
         const itemRect = this._layouts[index];
         let isFound = false;
         this._setRelevantBounds(itemRect, relevantDim);
-        const mininumViewPercentage = this._impressionTrackingConfig && this._impressionTrackingConfig.minimumViewabilityPercentage || undefined;
+        const mininumViewPercentage = this._viewabilityConfig && this._viewabilityConfig.minimumItemViewPercentage || undefined;
         if (this._itemIntersectsVisibleWindow(relevantDim.start, relevantDim.end, mininumViewPercentage)) {
             if (insertOnTop) {
                 newVisibleIndexes.splice(0, 0, index);
@@ -351,12 +354,44 @@ export default class ViewabilityTracker {
         this._engagedIndexes = newEngagedItems;
     }
 
+    private addToItemsViewTimeRangeMap(allIndexes: number[], nowIndexes: number[], notNowIndexes: number[], callbackFunc: TOnItemStatusChanged | null): void {
+        const currTime = +new Date();
+        const minimumViewTime = this._viewabilityConfig && this._viewabilityConfig.minimumViewTime;
+        const final: number[] = [];
+        if (minimumViewTime) {
+            if (notNowIndexes && notNowIndexes.length > 0) {
+                notNowIndexes.forEach((element: number) => {
+                    const item = this._itemsViewTimeRangeMap.get(element);
+                    if (item && item.startTime && item.startTime - currTime > minimumViewTime) {
+                        final.push(element);
+                        this._itemsViewTimeRangeMap.delete(element);
+                    }
+                });
+            }
+
+            if (nowIndexes && nowIndexes.length > 0) {
+                nowIndexes.forEach((element: number) => {
+                    this._itemsViewTimeRangeMap.set(element, {startTime: currTime});
+                });
+                // TODO : add settimeout to call callback function when minimumview time has passed and indexes are still there in visibleWindow
+            }
+        }
+        if (callbackFunc && (nowIndexes.length > 0 || notNowIndexes.length > 0 || final.length > 0)) {
+            callbackFunc(allIndexes, nowIndexes, notNowIndexes, final);
+        }
+    }
+
     private _diffArraysAndCallFunc(newItems: number[], oldItems: number[], func: TOnItemStatusChanged | null): void {
         if (func) {
             const now = this._calculateArrayDiff(newItems, oldItems);
             const notNow = this._calculateArrayDiff(oldItems, newItems);
+            const minimumViewTime = this._viewabilityConfig && this._viewabilityConfig.minimumViewTime;
             if (now.length > 0 || notNow.length > 0) {
-                func([...newItems], now, notNow);
+                if (minimumViewTime) {
+                    this.addToItemsViewTimeRangeMap([...newItems], now, notNow, func);
+                } else {
+                    func([...newItems], now, notNow);
+                }
             }
         }
     }
