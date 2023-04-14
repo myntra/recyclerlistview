@@ -35,6 +35,7 @@
   },
   "homepage": "https://github.com/Flipkart/recyclerlistview",
   "dependencies": {
+    "@types/lodash": "4.14.182",
     "lodash.debounce": "4.0.8",
     "prop-types": "15.8.1",
     "ts-object-utils": "0.0.5"
