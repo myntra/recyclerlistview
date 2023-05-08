@@ -9,7 +9,7 @@ echo "Removing old builds..."
 rm -rf dist
 
 echo "Removing DEV mode code..."
-echo "Isolating WEB code..."
+echo "Isolating WEB code... !!"
 cd src
 file-directives WEB,RELEASE
 
