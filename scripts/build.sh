@@ -13,9 +13,9 @@ echo "Isolating WEB code... !!"
 cd src
 file-directives WEB,RELEASE
 
-echo "TSC: Building ES5 web package..."
+echo "skipping this - TSC: Building ES5 web package..."
 cd ..
-tsc --outDir dist/web
+# tsc --outDir dist/web
 
 echo "Isolating REACT-NATIVE code..."
 cd src
