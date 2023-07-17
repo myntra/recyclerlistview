@@ -322,6 +322,13 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
         }
     }
 
+    public resetViewabilityTracking(): void {
+        const viewabilityTracker = this._virtualRenderer.getViewabilityTracker();
+        if (viewabilityTracker) {
+            viewabilityTracker.resetViewabilityTracking();
+        }
+    }
+
     public getLayout(index: number): Layout | undefined {
         const layoutManager = this._virtualRenderer.getLayoutManager();
         return layoutManager ? layoutManager.getLayouts()[index] : undefined;
