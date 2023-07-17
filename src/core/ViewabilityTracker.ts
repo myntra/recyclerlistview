@@ -153,6 +153,11 @@ export default class ViewabilityTracker {
         this.forceRefreshWithOffset(this._currentOffset);
     }
 
+    public resetViewabilityTracking() {
+        this._visibleIndexes = [];
+        this._lastReportedVisibleIndexes = [];
+    }
+
     public getCurrentRenderAheadOffset(): number {
         return this._renderAheadOffset;
     }
