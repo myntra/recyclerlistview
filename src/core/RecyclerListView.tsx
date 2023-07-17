@@ -322,10 +322,10 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
         }
     }
 
-    public resetViewabilityTracking() {
+    public resetViewabilityTracking(): void {
         const viewabilityTracker = this._virtualRenderer.getViewabilityTracker();
         if (viewabilityTracker) {
-            viewabilityTracker.resetViewabilityTracking()
+            viewabilityTracker.resetViewabilityTracking();
         }
     }
 
