@@ -76,6 +76,11 @@ export interface OnRecreateParams {
     lastOffset?: number;
 }
 
+export interface ViewabilityConfig {
+    minimumItemViewPercentage: number;
+    minimumViewTime: number;
+}
+
 export interface RecyclerListViewProps {
     layoutProvider: BaseLayoutProvider;
     dataProvider: BaseDataProvider;
@@ -110,6 +115,7 @@ export interface RecyclerListViewProps {
     //For all props that need to be proxied to inner/external scrollview. Put them in an object and they'll be spread
     //and passed down. For better typescript support.
     scrollViewProps?: object;
+    viewabilityConfig?: ViewabilityConfig;
     applyWindowCorrection?: (offsetX: number, offsetY: number, windowCorrection: WindowCorrection) => void;
     onItemLayout?: (index: number) => void;
     windowCorrectionConfig?: { value?: WindowCorrection, applyToInitialOffset?: boolean, applyToItemScroll?: boolean };
@@ -141,6 +147,7 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
         onEndReachedThreshold: 0,
         onEndReachedThresholdRelative: 0,
         renderAheadOffset: IS_WEB ? 1000 : 250,
+        viewabilityConfig: undefined,
     };
 
     public static propTypes = {};
@@ -181,7 +188,7 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
             this._pendingScrollToOffset = offset;
         }, (index) => {
             return this.props.dataProvider.getStableId(index);
-        }, !props.disableRecycling);
+        }, !props.disableRecycling, props.viewabilityConfig);
 
         if (this.props.windowCorrectionConfig) {
             let windowCorrection;
@@ -228,6 +235,9 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
         if (newProps.onVisibleIndicesChanged) {
             this._virtualRenderer.attachVisibleItemsListener(newProps.onVisibleIndicesChanged!);
         }
+        if (newProps.viewabilityConfig) {
+            this._virtualRenderer.updateViewabilityConfig(newProps.viewabilityConfig);
+        }
     }
 
     public componentDidUpdate(): void {
@@ -262,6 +272,7 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
                 }
             }
         }
+        this._virtualRenderer.timerCleanup();
     }
 
     public scrollToIndex(index: number, animate?: boolean): void {
@@ -308,6 +319,13 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
                 this.scrollToIndex(i, animate);
                 break;
             }
+        }
+    }
+
+    public resetViewabilityTracking(): void {
+        const viewabilityTracker = this._virtualRenderer.getViewabilityTracker();
+        if (viewabilityTracker) {
+            viewabilityTracker.resetViewabilityTracking();
         }
     }
 
