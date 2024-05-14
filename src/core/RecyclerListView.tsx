@@ -334,6 +334,11 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
         return layoutManager ? layoutManager.getLayouts()[index] : undefined;
     }
 
+    public getLayouts(): Layout[] | null {
+        const layoutManager = this._virtualRenderer.getLayoutManager();
+        return layoutManager ? layoutManager.getLayouts() : null;
+    }
+
     public scrollToTop(animate?: boolean): void {
         this.scrollToOffset(0, 0, animate);
     }
