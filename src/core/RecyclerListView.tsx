@@ -41,7 +41,7 @@ import { ComponentCompat } from "../utils/ComponentCompat";
 import ScrollComponent from "../platform/reactnative/scrollcomponent/ScrollComponent";
 import ViewRenderer from "../platform/reactnative/viewrenderer/ViewRenderer";
 import { DefaultJSItemAnimator as DefaultItemAnimator } from "../platform/reactnative/itemanimators/defaultjsanimator/DefaultJSItemAnimator";
-import { Platform } from "react-native";
+import { Platform, ScrollView } from "react-native";
 const IS_WEB = !Platform || Platform.OS === "web";
 //#endif
 
@@ -54,6 +54,7 @@ const IS_WEB = !Platform || Platform.OS === "web";
 //import ViewRenderer from "../platform/web/viewrenderer/ViewRenderer";
 //import { DefaultWebItemAnimator as DefaultItemAnimator } from "../platform/web/itemanimators/DefaultWebItemAnimator";
 //const IS_WEB = true;
+//type ScrollView = unknown;
 //#endif
 
 /***
@@ -397,6 +398,14 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
     public getContentDimension(): Dimension {
         return this._virtualRenderer.getLayoutDimension();
     }
+
+    public getNativeScrollRef(): ScrollView | null {
+        if (this._scrollComponent && this._scrollComponent.getNativeScrollRef) {
+          return this._scrollComponent.getNativeScrollRef();
+        }
+        return null;
+    }
+
 
     // Force Rerender forcefully to update view renderer. Use this in rare circumstances
     public forceRerender(): void {
