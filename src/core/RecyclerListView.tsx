@@ -406,7 +406,6 @@ export default class RecyclerListView<P extends RecyclerListViewProps, S extends
         return null;
     }
 
-
     // Force Rerender forcefully to update view renderer. Use this in rare circumstances
     public forceRerender(): void {
         this.setState({
