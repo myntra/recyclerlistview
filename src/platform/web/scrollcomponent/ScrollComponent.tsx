@@ -25,7 +25,7 @@ export default class ScrollComponent extends BaseScrollComponent {
   };
   private _height: number;
   private _width: number;
-  private _scrollViewRef: ScrollView | null = null;
+  private _scrollViewRef: BaseScrollView | ScrollView | null = null;
 
   constructor(args: ScrollComponentProps) {
     super(args);
