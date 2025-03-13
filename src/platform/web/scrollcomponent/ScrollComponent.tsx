@@ -38,7 +38,7 @@ export default class ScrollComponent extends BaseScrollComponent {
       this._scrollViewRef.scrollTo({ x, y, animated });
     }
   }
-  public getNativeScrollRef(): ScrollView | null {
+  public getNativeScrollRef(): BaseScrollView | null {
     return this._scrollViewRef;
   }
   public render(): JSX.Element {
